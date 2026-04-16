@@ -2,9 +2,11 @@ from fastapi import FastAPI
 from app.api.stats import router as stats_router
 from app.processing.worker import start_worker
 from app.capture.sniffer import start_sniffing
+from app.api.websocket import router as ws_router
 import threading
 
 app = FastAPI()
+app.include_router(ws_router)
 app.include_router(stats_router)
 
 @app.on_event("startup")
