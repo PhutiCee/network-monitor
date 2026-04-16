@@ -1,6 +1,9 @@
-import threading
+from app.processing.alert_engine import AlertEngine
+from app.processing.store_instance import metrics_store
 from app.processing.aggregator import packet_queue
-from app.processing.store_instance import metrics_store  # IMPORTANT FIX
+import threading
+
+alert_engine = AlertEngine()
 
 def worker():
     print("Worker started...")
@@ -8,11 +11,15 @@ def worker():
     while True:
         packet = packet_queue.get()
 
-        # print("WORKER RECEIVED:", packet)
-
-        metrics_store.update(packet)
+        if packet:
+            metrics_store.update(packet)
+            alert_engine.process(packet)  
 
         packet_queue.task_done()
+
+
+def get_alert_engine():
+    return alert_engine
 
 
 def start_worker():

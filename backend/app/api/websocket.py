@@ -1,19 +1,23 @@
 from fastapi import APIRouter, WebSocket
 import asyncio
 from app.processing.store_instance import metrics_store
+from app.processing.worker import get_alert_engine
 
 router = APIRouter()
 
 @router.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
+async def ws(websocket: WebSocket):
     await websocket.accept()
-    print("WebSocket client connected")
 
-    try:
-        while True:
-            data = metrics_store.snapshot()
-            await websocket.send_json(data)
-            await asyncio.sleep(1)
+    engine = get_alert_engine()
 
-    except Exception as e:
-        print("WebSocket disconnected:", e)
+    while True:
+        data = metrics_store.snapshot()
+
+        data["bandwidth_rate"] = metrics_store.get_bandwidth_rate()
+        data["pps"] = metrics_store.get_packets_per_second()
+
+        data["alerts"] = engine.get_alerts() 
+
+        await websocket.send_json(data)
+        await asyncio.sleep(1)
